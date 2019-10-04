@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"/>
+<!--    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet"/> -->
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-8">
+                <br>
+                <br>
+                <h4>{{ booking.date }}</h4>
+                <h4>{{ booking.course }}</h4>
+            </div>
+            <div class="col-md-4">
+                <img src="{{ url_for('static', filename='logopng.png') }}" width="275"/>
+            </div>
+        </div>
+        <hr>
+    </div>
+    <div class="container-fluid">
+        {% if pcqs == [] %}
+            <p>No Pre-Course Questionnaires have been returned for this course yet.</p>
+        {% else %}
+            {% for row in pcqs %}
+                <div class="row">
+                    <div class="col-md-3">
+                        <h4>Delegate {{ loop.index }}:</h4>
+                        <div style="text-align:center">
+                            <p>{{ row.name }}</p>
+                            {% if row.q1 == 1 %}
+                                <p class="bg-success">Pre-requisites met.  <span class="glyphicon glyphicon-ok"></span></p>
+                            {% else %}
+                                <p class="bg-danger">Pre-requisites not met. <span class="glyphicon glyphicon-remove"></span></p>
+                            {% endif %}
+                            {% if row.q1 == 1 %}
+                                <p class="bg-success">Course outline read.  <span class="glyphicon glyphicon-ok"></span></p>
+                            {% else %}
+                                <p class="bg-danger">Course outline not read. <span class="glyphicon glyphicon-remove"></span></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Do you have any prior experience relevant to this course?
+                        </div>
+                        <div class="panel-body">
+                            {{ row.q3 }}
+                        </div>
+                    </div>
+                </div>
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                Is there any aspect or feature of this course that holds special interest for you?
+                            </div>
+                            <div class="panel-body">
+                                {{ row.q4 }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                Is there anything we can do to assist you in attending this course?
+                            </div>
+                            <div class="panel-body">
+                                {{ row.q5 }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <hr>
+            {% endfor %}
+        {% endif %}
+    </div>
+</body>
