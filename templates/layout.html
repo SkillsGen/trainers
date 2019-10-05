@@ -9,7 +9,6 @@
         <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"/>
         <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
         
         <nav class="navbar navbar-default">
             <div class="container">
@@ -27,6 +26,10 @@
                 {% if session.user_id %}
                     <li>        
                         <a href="{{ url_for('logout') }}">Log out</a>
+                    </li>
+                {% else %}
+                    <li>        
+                        <a href="{{ url_for('adminlogin') }}">Admin Login</a>
                     </li>
                 {% endif %}
                 </ul>

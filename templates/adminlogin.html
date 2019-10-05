@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block title %}
-Login
+Admin Login
 {% endblock %}
 
 {% block main %}
@@ -8,7 +8,7 @@ Login
         <div class="row">
             <div class="col-xs-4"></div>
             <div class="col-xs-4">
-                <form action="{{ url_for('login') }}" method="post">
+                <form action="{{ url_for('adminlogin') }}" method="post">
                     <fieldset>
                         <div style="margin-top: 100px" class="form-group">
                             <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text"/>

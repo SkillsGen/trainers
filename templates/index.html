@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
     <head>
         <meta charset="utf-8"/>
@@ -27,11 +26,11 @@
         </nav>
     </head>
     <body>
+      {% if schedule %}
       <div class="container">
 	<h2>Your SkillsGen training schedule:</h2>
 	<p>Private courses may show as having no delegates because the client has not yet confirmed the number attending</p>
 	<div class="container">
-          <h2>{{Bookings}}</h2>
           <table class="table table-striped">
             <thead>
               <tr>
@@ -65,5 +64,28 @@
           </table>
 	</div>
       </div>
+{% else %}
+      {% if trainers %}
+      <div class="container">
+	<h2>Pick a trainer to see their schedule as they would see it:</h2>
+	<div class="container">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in trainers %}
+              <tr>
+                <td><a href="{{ url_for('index', trainer = row.id) }}">{{ row.name }}</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>    
+          </table>
+	</div>
+      </div>
+{% endif %}
+     {% endif %}
     </body>
 </html>

@@ -125,9 +125,30 @@ def login(message=""):
         
         else:
             session["user_id"] = ver[0]["id"]
+            session["admin"] = False
             return redirect(url_for("index"))      
     else:
         return render_template("login.html")
+
+@app.route("/adminlogin", methods=["GET", "POST"])
+def adminlogin(message=""):
+    if request.method == "POST":
+        if not request.form.get("username"):
+            return render_template("adminlogin.html", message = "Username required.")
+        elif not request.form.get("password"):
+            return render_template("adminlogin.html", message = "Password required.")
+        
+        ver = db.execute("SELECT * FROM users WHERE username = :username", username = request.form.get("username"))
+        if len(ver) != 1 or not pwd_context.verify(request.form.get("password"), ver[0]["hash"]):
+            return render_template("adminlogin.html", message = "Incorrect password or nonexistant Username")
+        
+        else:
+            session["user_id"] = ver[0]["id"]
+            session["admin"] = True
+            print("sucess")
+            return redirect(url_for("index"))      
+    else:
+        return render_template("adminlogin.html")
 
     
 @app.route("/logout")
@@ -141,26 +162,29 @@ def logout():
 @app.route("/", methods = ['GET','POST'])
 @aux_login_required
 def index(message=""):
-
-    schedule = db.execute("SELECT bookings.id, bookings.date, bookings.notes, bookings.private, bookings.location, bookings.delcode, courses.name AS coursename FROM bookings INNER JOIN courses ON bookings.course=courses.id WHERE trainer = :trainerid AND cast(date as date) > CURRENT_DATE ORDER BY bookings.date",
-                          trainerid = session["user_id"])
-    for row in schedule:
-        delcount = db.execute("SELECT COUNT(id) AS delcount FROM delegates WHERE bookingid = :bookingid",
-                              bookingid = row["id"])
-        row.update({"delcount": delcount[0]["delcount"]})
-        has_pcqs = db.execute("select exists(select 1 from pcq where bookingid=:bookingid)",
-                              bookingid = row["id"])
-        row.update({"has_pcqs": has_pcqs[0]["exists"]})
+    schedule = []
+    if session['admin'] == False:
+        schedule = db.execute("SELECT bookings.id, bookings.date, bookings.notes, bookings.private, bookings.location, bookings.delcode, courses.name AS coursename, (SELECT Count(delegates.id) FROM delegates WHERE delegates.bookingid = bookings.id) AS delcount, (SELECT EXISTS(SELECT 1 FROM pcq WHERE pcq.bookingid = bookings.id)) AS has_pcqs FROM bookings INNER JOIN courses ON bookings.course=courses.id WHERE trainer = :trainerid AND cast(date as date) > CURRENT_DATE ORDER BY bookings.date",
+                              trainerid = session["user_id"])
+    else:
+        if request.args.get("trainer") != None:
+            schedule = db.execute("SELECT bookings.id, bookings.date, bookings.notes, bookings.private, bookings.location, bookings.delcode, courses.name AS coursename, (SELECT Count(delegates.id) FROM delegates WHERE delegates.bookingid = bookings.id) AS delcount, (SELECT EXISTS(SELECT 1 FROM pcq WHERE pcq.bookingid = bookings.id)) AS has_pcqs FROM bookings INNER JOIN courses ON bookings.course=courses.id WHERE trainer = :trainerid AND cast(date as date) > CURRENT_DATE ORDER BY bookings.date",
+                                  trainerid = request.args.get("trainer"))
+        else:
+            trainers = db.execute("SELECT id, name FROM trainers ORDER BY name")
+            return render_template("index.html", trainers = trainers)
 
     return render_template("index.html", schedule = schedule)
-    
+
 @app.route("/pcq", methods = ['GET']) 
 @login_required
 def pcq(message=""):
     if request.args.get("key") != None:
-        booking = db.execute("SELECT bookings.date, courses.name AS course FROM bookings INNER JOIN courses on bookings.course = courses.id WHERE bookings.id = :bookingid",
+        booking = db.execute("SELECT bookings.date, bookings.trainer, courses.name AS course FROM bookings INNER JOIN courses on bookings.course = courses.id WHERE bookings.id = :bookingid",
                                 bookingid = request.args.get("key")
                                 )
+        if session["admin"] == False and booking[0]["trainer"] != session["user_id"]:
+            return "You aren't authorized to view this booking"
         pcqs = db.execute("SELECT * FROM pcq WHERE bookingid = :bookingid",
                                 bookingid = request.args.get("key")
                                 )
