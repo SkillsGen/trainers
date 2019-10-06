@@ -164,22 +164,24 @@ def logout():
 def index(message=""):
     schedule = []
     trainername = ""
+    trainerid = None
     if session['admin'] == False:
         name = db.execute("SELECT name FROM trainers WHERE id = :trainerid",
                                  trainerid = session["user_id"])
         trainername = name[0]["name"]
-        schedule = db.execute("SELECT bookings.id, bookings.date, bookings.notes, bookings.private, bookings.location, bookings.delcode, courses.name AS coursename, customers.name AS customer, (SELECT Count(delegates.id) FROM delegates WHERE delegates.bookingid = bookings.id) AS delcount, (SELECT EXISTS(SELECT 1 FROM pcq WHERE pcq.bookingid = bookings.id)) AS has_pcqs FROM bookings INNER JOIN courses ON bookings.course=courses.id LEFT JOIN customers ON bookings.customer=customers.id WHERE trainer = :trainerid AND cast(date as date) > CURRENT_DATE ORDER BY bookings.date",
-                              trainerid = session["user_id"])
+        trainerid = trainerid = session["user_id"]
     else:
         if request.args.get("trainer") != None:
-            schedule = db.execute("SELECT bookings.id, bookings.date, bookings.notes, bookings.private, bookings.location, bookings.delcode, courses.name AS coursename, (SELECT Count(delegates.id) FROM delegates WHERE delegates.bookingid = bookings.id) AS delcount, (SELECT EXISTS(SELECT 1 FROM pcq WHERE pcq.bookingid = bookings.id)) AS has_pcqs FROM bookings INNER JOIN courses ON bookings.course=courses.id WHERE trainer = :trainerid AND cast(date as date) > CURRENT_DATE ORDER BY bookings.date",
-                                  trainerid = request.args.get("trainer"))
+            trainerid = request.args.get("trainer")
             name = db.execute("SELECT name FROM trainers WHERE id = :trainerid",
                               trainerid = request.args.get("trainer"))
             trainername = name[0]["name"]
         else:
-            trainers = db.execute("SELECT id, name FROM trainers ORDER BY name")
+            trainers = db.execute("SELECT trainers.id, trainers.name FROM trainers WHERE (SELECT EXISTS(SELECT 1 FROM bookings WHERE bookings.trainer = trainers.id AND cast(bookings.date as date) >= CURRENT_DATE)) = true ORDER BY name")
             return render_template("index.html", trainers = trainers)
+
+    schedule = db.execute("SELECT bookings.id, bookings.date, bookings.notes, bookings.private, bookings.location, bookings.delcode, courses.name AS coursename, customers.name AS customer, (SELECT Count(delegates.id) FROM delegates WHERE delegates.bookingid = bookings.id) AS delcount, (SELECT EXISTS(SELECT 1 FROM pcq WHERE pcq.bookingid = bookings.id)) AS has_pcqs FROM bookings INNER JOIN courses ON bookings.course=courses.id LEFT JOIN customers ON bookings.customer=customers.id WHERE trainer = :trainerid AND cast(date as date) >= CURRENT_DATE ORDER BY bookings.date",
+                              trainerid = trainerid)
 
     return render_template("index.html", schedule = schedule, trainername = trainername)
 
@@ -203,4 +205,4 @@ def pcq(message=""):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port,debug=True)
+    app.run(host='0.0.0.0', port=port,debug=False)
