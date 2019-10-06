@@ -28,14 +28,18 @@
     <body>
       {% if schedule %}
       <div class="container">
-	<h2>Your SkillsGen training schedule:</h2>
-	<p>Private courses may show as having no delegates because the client has not yet confirmed the number attending</p>
+	<h2>{{ trainername }}'s SkillsGen training schedule:</h2>
+	<ul>
+	<li>All the following dates have been confirmed, unconfirmed dates will not appear.</li>
+	<li>Private courses may show as having no delegates because the client has not yet confirmed the number attending.</li>
+	</ul>
 	<div class="container">
           <table class="table table-striped">
             <thead>
               <tr>
                 <th>Course Date</th>
                 <th>Course</th>
+                <th>Customer</th>
                 <th>Delegates</th>
 		<th>PCQs</th>
                 <th>Metrics Code</th>
@@ -48,6 +52,11 @@
               <tr>
                 <td>{{ row.date }}</a></td>
                 <td>{{ row.coursename }}</td>
+                {% if row.private == 1 %}
+                    <td>{{ row.customer }}</td>
+		{% else %}
+                    <td>Public Course</td>
+                {% endif %}
                 <td>{{ row.delcount }}</td>
                 {% if row.has_pcqs %}
                    <td><a href ="{{ url_for('pcq', key = row.id) }}">PCQs</a></td>

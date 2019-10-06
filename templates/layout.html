@@ -27,7 +27,12 @@
                     <li>        
                         <a href="{{ url_for('logout') }}">Log out</a>
                     </li>
-                {% else %}
+                    {% endif %}
+		    {% if admin %}
+                    <li>        
+                        <a href="{{ url_for('login') }}">Trainer Login</a>
+                    </li>
+		    {% else %}
                     <li>        
                         <a href="{{ url_for('adminlogin') }}">Admin Login</a>
                     </li>

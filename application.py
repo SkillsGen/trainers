@@ -134,13 +134,13 @@ def login(message=""):
 def adminlogin(message=""):
     if request.method == "POST":
         if not request.form.get("username"):
-            return render_template("adminlogin.html", message = "Username required.")
+            return render_template("adminlogin.html", message = "Username required.", admin = true)
         elif not request.form.get("password"):
-            return render_template("adminlogin.html", message = "Password required.")
+            return render_template("adminlogin.html", message = "Password required.", admin = true)
         
         ver = db.execute("SELECT * FROM users WHERE username = :username", username = request.form.get("username"))
         if len(ver) != 1 or not pwd_context.verify(request.form.get("password"), ver[0]["hash"]):
-            return render_template("adminlogin.html", message = "Incorrect password or nonexistant Username")
+            return render_template("adminlogin.html", admin = true, message = "Incorrect password or nonexistant Username")
         
         else:
             session["user_id"] = ver[0]["id"]
@@ -148,7 +148,7 @@ def adminlogin(message=""):
             print("sucess")
             return redirect(url_for("index"))      
     else:
-        return render_template("adminlogin.html")
+        return render_template("adminlogin.html", admin = True)
 
     
 @app.route("/logout")
@@ -163,18 +163,26 @@ def logout():
 @aux_login_required
 def index(message=""):
     schedule = []
+    trainername = ""
     if session['admin'] == False:
-        schedule = db.execute("SELECT bookings.id, bookings.date, bookings.notes, bookings.private, bookings.location, bookings.delcode, courses.name AS coursename, (SELECT Count(delegates.id) FROM delegates WHERE delegates.bookingid = bookings.id) AS delcount, (SELECT EXISTS(SELECT 1 FROM pcq WHERE pcq.bookingid = bookings.id)) AS has_pcqs FROM bookings INNER JOIN courses ON bookings.course=courses.id WHERE trainer = :trainerid AND cast(date as date) > CURRENT_DATE ORDER BY bookings.date",
+        name = db.execute("SELECT name FROM trainers WHERE id = :trainerid",
+                                 trainerid = session["user_id"])
+        trainername = name[0]["name"]
+        schedule = db.execute("SELECT bookings.id, bookings.date, bookings.notes, bookings.private, bookings.location, bookings.delcode, courses.name AS coursename, customers.name AS customer, (SELECT Count(delegates.id) FROM delegates WHERE delegates.bookingid = bookings.id) AS delcount, (SELECT EXISTS(SELECT 1 FROM pcq WHERE pcq.bookingid = bookings.id)) AS has_pcqs FROM bookings INNER JOIN courses ON bookings.course=courses.id LEFT JOIN customers ON bookings.customer=customers.id WHERE trainer = :trainerid AND cast(date as date) > CURRENT_DATE ORDER BY bookings.date",
                               trainerid = session["user_id"])
     else:
         if request.args.get("trainer") != None:
             schedule = db.execute("SELECT bookings.id, bookings.date, bookings.notes, bookings.private, bookings.location, bookings.delcode, courses.name AS coursename, (SELECT Count(delegates.id) FROM delegates WHERE delegates.bookingid = bookings.id) AS delcount, (SELECT EXISTS(SELECT 1 FROM pcq WHERE pcq.bookingid = bookings.id)) AS has_pcqs FROM bookings INNER JOIN courses ON bookings.course=courses.id WHERE trainer = :trainerid AND cast(date as date) > CURRENT_DATE ORDER BY bookings.date",
                                   trainerid = request.args.get("trainer"))
+            name = db.execute("SELECT name FROM trainers WHERE id = :trainerid",
+                              trainerid = request.args.get("trainer"))
+            trainername = name[0]["name"]
         else:
             trainers = db.execute("SELECT id, name FROM trainers ORDER BY name")
             return render_template("index.html", trainers = trainers)
 
-    return render_template("index.html", schedule = schedule)
+    return render_template("index.html", schedule = schedule, trainername = trainername)
+
 
 @app.route("/pcq", methods = ['GET']) 
 @login_required
